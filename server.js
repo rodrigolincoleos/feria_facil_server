@@ -7,11 +7,13 @@ app.use(cors());
 app.use(express.json());
 
 // Conexión remota a MySQL en 5dr3d.ddns.net
+console.log('🛠️ Conectando a base de datos:', process.env.DB_HOST);
+
 const db = mysql.createConnection({
-  host: process.env.DB_HOST || '5dr3d.ddns.net',
-  user: process.env.DB_USER || 'sodro',
-  password: process.env.DB_PASS || 'zWfr0rx-/(bCKVn/',
-  database: process.env.DB_NAME || '5dr3d'
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME
 });
 
 // Crear Producto
