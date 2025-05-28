@@ -263,13 +263,29 @@ app.get('/api/get/ferias/:id/productos', (req, res) => {
 app.get('/api/usuario/validar', (req, res) => {
   const { email } = req.query;
 
+  if (!email) {
+    console.warn('⚠️ Email no proporcionado en la solicitud');
+    return res.status(400).json({ autorizado: false, mensaje: 'Email es requerido' });
+  }
+
   const sql = 'SELECT * FROM usuarios_autorizados WHERE email = ?';
+
   db.query(sql, [email], (err, result) => {
-    if (err) return res.status(500).json({ autorizado: false });
-    if (result.length === 0) return res.status(403).json({ autorizado: false });
+    if (err) {
+      console.error('❌ Error en la consulta SQL:', err);
+      return res.status(500).json({ autorizado: false, mensaje: 'Error en el servidor' });
+    }
+
+    if (result.length === 0) {
+      console.info(`🔒 Email no autorizado: ${email}`);
+      return res.status(403).json({ autorizado: false, mensaje: 'Usuario no autorizado' });
+    }
+
+    console.log(`✅ Usuario autorizado: ${email}`);
     return res.status(200).json({ autorizado: true });
   });
 });
+
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3001;
