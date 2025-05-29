@@ -288,11 +288,14 @@ app.get('/api/usuario/validar', (req, res) => {
   });
 });
 
-// RUTA PROTEGIDA CON JWT
 app.get('/api/privado', checkJwt, (req, res) => {
-  res.json({ mensaje: 'Este es un endpoint protegido', user: req.user });
+  try {
+    res.json({ mensaje: 'Acceso permitido a ruta protegida' });
+  } catch (err) {
+    console.error('❌ Error interno en /api/privado:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
-
 // Iniciar servidor
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
