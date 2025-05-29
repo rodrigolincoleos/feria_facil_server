@@ -262,12 +262,11 @@ app.get('/api/get/ferias/:id/productos', (req, res) => {
 });
 
 // Validar email de usuario
-
 app.get('/api/usuario/validar', checkJwt, (req, res) => {
   const { email } = req.query;
+  console.log('🔍 Validando email:', email);
 
   if (!email) {
-    console.warn('⚠️ Email no proporcionado en la solicitud');
     return res.status(400).json({ autorizado: false, mensaje: 'Email es requerido' });
   }
 
@@ -288,6 +287,7 @@ app.get('/api/usuario/validar', checkJwt, (req, res) => {
     return res.status(200).json({ autorizado: true });
   });
 });
+
 
 
 app.get('/api/privado', checkJwt, (req, res) => {
