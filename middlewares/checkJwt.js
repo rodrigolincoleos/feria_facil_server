@@ -1,17 +1,20 @@
-import jwt from 'express-jwt';
-import jwks from 'jwks-rsa';
+import { expressjwt } from 'express-jwt';
+import jwksRsa from 'jwks-rsa';
+import dotenv from 'dotenv';
 
-const domain = import.meta.env.VITE_AUTH0_DOMAIN;
-const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
+dotenv.config();
 
-export const checkJwt = jwt({
-  secret: jwks.expressJwtSecret({
+const domain = process.env.AUTH0_DOMAIN;
+const audience = process.env.AUTH0_AUDIENCE;
+
+export const checkJwt = expressjwt({
+  secret: jwksRsa.expressJwtSecret({
     cache: true,
     rateLimit: true,
     jwksRequestsPerMinute: 5,
-    jwksUri: `${domain}.well-known/jwks.json`,
+    jwksUri: `https://${domain}/.well-known/jwks.json`
   }),
   audience: audience,
-  issuer: domain,
-  algorithms: ['RS256'],
+  issuer: `https://${domain}/`,
+  algorithms: ['RS256']
 });

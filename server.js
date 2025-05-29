@@ -1,13 +1,15 @@
-const express = require('express');
-const cors = require('cors');
-const mysql = require('mysql2');
+import express from 'express';
+import cors from 'cors';
+import mysql from 'mysql2';
+import dotenv from 'dotenv';
 import { checkJwt } from './middlewares/checkJwt.js';
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Conexión remota a MySQL en 5dr3d.ddns.net
 console.log('🛠️ Conectando a base de datos:', process.env.DB_HOST);
 
 const db = mysql.createConnection({
@@ -16,7 +18,6 @@ const db = mysql.createConnection({
   password: process.env.DB_PASS,
   database: process.env.DB_NAME
 });
-
 // Crear Producto
 app.post('/api/post/productos/', (req, res) => {
   const {
@@ -287,10 +288,10 @@ app.get('/api/usuario/validar', (req, res) => {
   });
 });
 
+// RUTA PROTEGIDA CON JWT
 app.get('/api/privado', checkJwt, (req, res) => {
   res.json({ mensaje: 'Este es un endpoint protegido', user: req.user });
 });
-
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3001;
