@@ -266,6 +266,8 @@ app.get('/api/usuario/validar', checkJwt, validarUsuario, logJwtDebug, (req, res
   const { email } = req.query;
   console.log('🔍 Validando email:', email);
   console.log('🔍 log debug jwt:', logJwtDebug);
+  console.log('🔐 Auth payload:', req.auth);
+
 
   if (!email) {
     return res.status(400).json({ autorizado: false, mensaje: 'Email es requerido' });
