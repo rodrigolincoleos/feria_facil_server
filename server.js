@@ -3,7 +3,7 @@ import cors from 'cors';
 import mysql from 'mysql2';
 import dotenv from 'dotenv';
 import { checkJwt } from './middlewares/checkJwt.js';
-
+import { validarUsuario } from './controllers/usuarioController.js';
 dotenv.config();
 
 const app = express();
@@ -262,7 +262,7 @@ app.get('/api/get/ferias/:id/productos', (req, res) => {
 });
 
 // Validar email de usuario
-app.get('/api/usuario/validar', checkJwt, (req, res) => {
+app.get('/api/usuario/validar', checkJwt, validarUsuario, (req, res) => {
   const { email } = req.query;
   console.log('🔍 Validando email:', email);
 
