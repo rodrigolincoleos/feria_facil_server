@@ -1,5 +1,5 @@
 import { expressjwt } from 'express-jwt';
-const { auth } = require('express-oauth2-jwt-bearer');
+import { auth } from 'express-oauth2-jwt-bearer';
 import jwksRsa from 'jwks-rsa';
 import dotenv from 'dotenv';
 
