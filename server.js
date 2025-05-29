@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
+import { checkJwt } from './middlewares/checkJwt.js';
 
 const app = express();
 app.use(cors());
@@ -284,6 +285,10 @@ app.get('/api/usuario/validar', (req, res) => {
     console.log(`✅ Usuario autorizado: ${email}`);
     return res.status(200).json({ autorizado: true });
   });
+});
+
+app.get('/api/privado', checkJwt, (req, res) => {
+  res.json({ mensaje: 'Este es un endpoint protegido', user: req.user });
 });
 
 
