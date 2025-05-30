@@ -6,7 +6,10 @@ import { checkJwt,  } from './middlewares/checkJwt.js';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'https://cincodadosrojos3d.cl',
+  credentials: true // solo si usas cookies o tokens en headers
+}));
 app.use(express.json());
 
 console.log('🛠️ Conectando a base de datos:', process.env.DB_HOST);
