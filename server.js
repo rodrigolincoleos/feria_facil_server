@@ -262,7 +262,7 @@ app.get('/api/get/ferias/:id/productos', (req, res) => {
 });
 
 // Validar email de usuario
-app.get('/api/usuario/validar', checkJwt, validarUsuario, logJwtDebug, (req, res) => {
+app.get('/api/usuarios/validar', checkJwt, validarUsuario, logJwtDebug, (req, res) => {
   const { email } = req.query;
   console.log('🔍 Validando email:', email);
   console.log('🔍 log debug jwt:', logJwtDebug);
