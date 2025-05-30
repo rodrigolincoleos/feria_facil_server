@@ -14,9 +14,6 @@ app.use(express.json());
 
 console.log('🛠️ Conectando a base de datos:', process.env.DB_HOST);
 
-// Conexión persistente con Pool
-import mysql from 'mysql2';
-
 export const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
