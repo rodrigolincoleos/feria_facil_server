@@ -2,8 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import mysql from 'mysql2';
 import dotenv from 'dotenv';
-import { checkJwt, logJwtDebug } from './middlewares/checkJwt.js';
-import { validarUsuario } from './controllers/usuarioController.js';
+import { checkJwt,  } from './middlewares/checkJwt.js';
 dotenv.config();
 
 const app = express();
@@ -261,24 +260,22 @@ app.get('/api/get/ferias/:id/productos', (req, res) => {
   });
 });
 
-// Validar email de usuario
-app.get('/api/usuario/validar', checkJwt, validarUsuario, logJwtDebug, (req, res) => {
+// Validar email de usuario (ruta pública)
+app.get('/api/usuario/validar', (req, res) => {
   const { email } = req.query;
-  console.log('🔍 Validando email:', email);
-  console.log('🔍 log debug jwt:', logJwtDebug);
-  console.log('🔐 Auth payload:', req.auth);
-
 
   if (!email) {
     return res.status(400).json({ autorizado: false, mensaje: 'Email es requerido' });
   }
+
+  console.log('🔍 Validando email:', email);
 
   const sql = 'SELECT * FROM usuarios_autorizados WHERE email = ?';
 
   db.query(sql, [email], (err, result) => {
     if (err) {
       console.error('❌ Error en la consulta SQL:', err);
-      return res.status(500).json({ autorizado: false, mensaje: 'Error en el servidor' });
+      return res.status(500).json({ autorizado: false, mensaje: 'Error interno del servidor' });
     }
 
     if (result.length === 0) {
@@ -290,6 +287,7 @@ app.get('/api/usuario/validar', checkJwt, validarUsuario, logJwtDebug, (req, res
     return res.status(200).json({ autorizado: true });
   });
 });
+
 
 
 
