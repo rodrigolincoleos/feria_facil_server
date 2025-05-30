@@ -24,14 +24,6 @@ export const db = mysql.createPool({
   queueLimit: 0
 });
 
-db.connect((err) => {
-  if (err) {
-    console.error('❌ Error al conectar a la base de datos:', err.message);
-  } else {
-    console.log('✅ Conectado a la base de datos');
-  }
-});
-
 // Crear Producto
 app.post('/api/post/productos/', (req, res) => {
   const {
