@@ -7,7 +7,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-  origin: 'https://cincodadosrojos3d.cl',
+  origin: '*',
   credentials: true // solo si usas cookies o tokens en headers
 }));
 app.use(express.json());
