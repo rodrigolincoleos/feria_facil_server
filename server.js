@@ -14,6 +14,7 @@ app.use(express.json());
 
 console.log('🛠️ Conectando a base de datos:', process.env.DB_HOST);
 
+
 export const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -21,8 +22,11 @@ export const db = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000
 });
+
 
 // Crear Producto
 app.post('/api/post/productos/', (req, res) => {
