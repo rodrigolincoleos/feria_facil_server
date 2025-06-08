@@ -299,6 +299,22 @@ app.get('/api/usuario/validar', (req, res) => {
   });
 });
 
+// Eliminar feria
+app.delete('/api/del/ferias/:id', (req, res) => {
+  const { id } = req.params;
+
+  const sql = 'DELETE FROM ferias WHERE id = ?';
+
+  db.query(sql, [id], (err, result) => {
+    if (err) return res.status(500).json({ error: 'Error al eliminar feria' });
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Feria no encontrada' });
+    }
+
+    res.status(200).json({ message: '✅ Feria eliminada correctamente' });
+  });
+});
 
 
 
