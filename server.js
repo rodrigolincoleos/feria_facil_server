@@ -338,6 +338,30 @@ app.get('/api/privado', checkJwt, (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+
+app.post('/api/post/ventas_feria', (req, res) => {
+  const { feria_id, ventas } = req.body;
+
+  if (!feria_id || !Array.isArray(ventas)) {
+    return res.status(400).json({ error: 'Datos incompletos' });
+  }
+
+  const sql = `
+    INSERT INTO ventas_feria (feria_id, producto_id, cantidad, medio_pago)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  ventas.forEach(venta => {
+    const { producto_id, cantidad, medio_pago } = venta;
+    db.query(sql, [feria_id, producto_id, cantidad, medio_pago], (err) => {
+      if (err) console.error('❌ Error al registrar venta:', err);
+    });
+  });
+
+  res.status(200).json({ mensaje: '✅ Ventas registradas' });
+});
+
+
 // Iniciar servidor
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
