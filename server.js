@@ -233,7 +233,6 @@ app.delete('/api/del/productos/:id', (req, res) => {
 });
 
 // Guardar productos en inventario de feria
-// Guardar productos en inventario de feria
 app.post('/api/post/inventario_feria', (req, res) => {
   const { feria_id, productos } = req.body;
 
@@ -271,57 +270,29 @@ app.post('/api/post/inventario_feria', (req, res) => {
 app.get('/api/get/ferias/:id/productos', (req, res) => {
   const { id } = req.params;
 
-  const queryVentas = `
-    SELECT 
-      v.producto_id AS id,
-      SUM(v.cantidad) AS vendidos,
-      p.nombre,
-      p.total
-    FROM ventas_feria v
-    JOIN productos p ON v.producto_id = p.id
-    WHERE v.feria_id = ?
-    GROUP BY v.producto_id
-  `;
-
-  const queryInventario = `
+  const query = `
     SELECT 
       fp.producto_id AS id,
-      fp.cantidad,
       p.nombre,
-      p.total
+      fp.cantidad AS stock_inicial,
+      IFNULL(SUM(vf.cantidad), 0) AS vendidos,
+      fp.cantidad - IFNULL(SUM(vf.cantidad), 0) AS stock_actual,
+      p.total,
+      (fp.cantidad - IFNULL(SUM(vf.cantidad), 0)) * p.total AS totalLinea
     FROM feria_productos fp
     JOIN productos p ON fp.producto_id = p.id
+    LEFT JOIN ventas_feria vf ON fp.feria_id = vf.feria_id AND fp.producto_id = vf.producto_id
     WHERE fp.feria_id = ?
+    GROUP BY fp.producto_id, fp.cantidad, p.nombre, p.total
   `;
 
-  db.query(queryVentas, [id], (errVentas, resVentas) => {
-    if (errVentas) return res.status(500).json({ error: errVentas });
-
-    if (resVentas.length > 0) {
-      const lista = resVentas.map(v => ({
-        id: v.id,
-        nombre: v.nombre,
-        cantidad: 0, // no se conoce el inventario base desde ventas
-        vendidos: v.vendidos,
-        total: Math.round(v.total),
-        totalLinea: Math.round(v.total * v.vendidos),
-      }));
-      return res.status(200).json(lista);
+  db.query(query, [id], (err, result) => {
+    if (err) {
+      console.error('❌ Error al obtener productos de la feria:', err);
+      return res.status(500).json({ error: 'Error al obtener productos de la feria' });
     }
 
-    db.query(queryInventario, [id], (errInv, resInv) => {
-      if (errInv) return res.status(500).json({ error: errInv });
-
-      const lista = resInv.map(i => ({
-        id: i.id,
-        nombre: i.nombre,
-        cantidad: i.cantidad,
-        vendidos: 0,
-        total: Math.round(i.total),
-        totalLinea: Math.round(i.total * i.cantidad),
-      }));
-      return res.status(200).json(lista);
-    });
+    res.status(200).json(result);
   });
 });
 
