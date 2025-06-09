@@ -233,6 +233,7 @@ app.delete('/api/del/productos/:id', (req, res) => {
 });
 
 // Guardar productos en inventario de feria
+// Guardar productos en inventario de feria
 app.post('/api/post/inventario_feria', (req, res) => {
   const { feria_id, productos } = req.body;
 
@@ -240,20 +241,31 @@ app.post('/api/post/inventario_feria', (req, res) => {
     return res.status(400).json({ error: 'Datos incompletos' });
   }
 
-  const insertQuery = `
-    INSERT INTO feria_productos (feria_id, producto_id, cantidad)
-    VALUES (?, ?, ?)
-    ON DUPLICATE KEY UPDATE cantidad = VALUES(cantidad)
-  `;
+  // Paso 1: eliminar todos los productos actuales de esa feria
+  const deleteQuery = 'DELETE FROM feria_productos WHERE feria_id = ?';
 
-  productos.forEach(p => {
-    db.query(insertQuery, [feria_id, p.producto_id, p.cantidad], (err) => {
-      if (err) console.error('❌ Error al insertar producto:', err);
+  db.query(deleteQuery, [feria_id], (err) => {
+    if (err) {
+      console.error('❌ Error al eliminar productos previos:', err);
+      return res.status(500).json({ error: 'Error al limpiar inventario previo' });
+    }
+
+    // Paso 2: insertar los nuevos productos
+    const insertQuery = `
+      INSERT INTO feria_productos (feria_id, producto_id, cantidad)
+      VALUES (?, ?, ?)
+    `;
+
+    productos.forEach(p => {
+      db.query(insertQuery, [feria_id, p.producto_id, p.cantidad], (err2) => {
+        if (err2) console.error('❌ Error al insertar producto:', err2);
+      });
     });
-  });
 
-  res.status(200).json({ mensaje: 'Inventario guardado correctamente' });
+    res.status(200).json({ mensaje: 'Inventario actualizado correctamente' });
+  });
 });
+
 
 // Obtener productos de una feria
 app.get('/api/get/ferias/:id/productos', (req, res) => {
