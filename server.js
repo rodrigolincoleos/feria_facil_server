@@ -271,17 +271,60 @@ app.post('/api/post/inventario_feria', (req, res) => {
 app.get('/api/get/ferias/:id/productos', (req, res) => {
   const { id } = req.params;
 
-  const sql = `
-    SELECT producto_id AS id, cantidad
-    FROM feria_productos
-    WHERE feria_id = ?
+  const queryVentas = `
+    SELECT 
+      v.producto_id AS id,
+      SUM(v.cantidad) AS vendidos,
+      p.nombre,
+      p.total
+    FROM ventas_feria v
+    JOIN productos p ON v.producto_id = p.id
+    WHERE v.feria_id = ?
+    GROUP BY v.producto_id
   `;
 
-  db.query(sql, [id], (err, result) => {
-    if (err) return res.status(500).json({ error: 'Error al consultar la feria' });
-    res.status(200).json(result);
+  const queryInventario = `
+    SELECT 
+      fp.producto_id AS id,
+      fp.cantidad,
+      p.nombre,
+      p.total
+    FROM feria_productos fp
+    JOIN productos p ON fp.producto_id = p.id
+    WHERE fp.feria_id = ?
+  `;
+
+  db.query(queryVentas, [id], (errVentas, resVentas) => {
+    if (errVentas) return res.status(500).json({ error: errVentas });
+
+    if (resVentas.length > 0) {
+      const lista = resVentas.map(v => ({
+        id: v.id,
+        nombre: v.nombre,
+        cantidad: 0, // no se conoce el inventario base desde ventas
+        vendidos: v.vendidos,
+        total: Math.round(v.total),
+        totalLinea: Math.round(v.total * v.vendidos),
+      }));
+      return res.status(200).json(lista);
+    }
+
+    db.query(queryInventario, [id], (errInv, resInv) => {
+      if (errInv) return res.status(500).json({ error: errInv });
+
+      const lista = resInv.map(i => ({
+        id: i.id,
+        nombre: i.nombre,
+        cantidad: i.cantidad,
+        vendidos: 0,
+        total: Math.round(i.total),
+        totalLinea: Math.round(i.total * i.cantidad),
+      }));
+      return res.status(200).json(lista);
+    });
   });
 });
+
 
 // Validar email de usuario (ruta pública)
 app.get('/api/usuario/validar', (req, res) => {
