@@ -85,6 +85,8 @@ app.post('/api/post/productos/', upload.single('imagen'), (req, res) => {
   });
 });
 
+app.use('/uploads', express.static('uploads'));
+
 // Crear feria
 app.post('/api/post/feria', (req, res) => {
   const {
