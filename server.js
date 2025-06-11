@@ -3,7 +3,20 @@ import cors from 'cors';
 import mysql from 'mysql2';
 import dotenv from 'dotenv';
 import { checkJwt,  } from './middlewares/checkJwt.js';
+import multer from 'multer';
+
 dotenv.config();
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './uploads/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
+});
+const upload = multer({ storage: storage });
 
 const app = express();
 app.use(cors({
@@ -29,7 +42,7 @@ export const db = mysql.createPool({
 
 
 // Crear Producto
-app.post('/api/post/productos/', (req, res) => {
+app.post('/api/post/productos/', upload.single('imagen'), (req, res) => {
   const {
     nombre, impresora_id, filamento, gramos, horas,
     margen, iva, energia, material, desgaste,
@@ -37,16 +50,19 @@ app.post('/api/post/productos/', (req, res) => {
     alto, ancho, largo, scale
   } = req.body;
 
+  // Si se subió imagen, guarda el nombre del archivo
+  const imagen = req.file ? req.file.filename : null;
+
   const sql = `
     INSERT INTO productos (
-      nombre, impresora_id, filamento, gramos, horas,
+      nombre, imagen, impresora_id, filamento, gramos, horas,
       margen, iva, energia, material, desgaste,
       utilidad, impuesto, total, usuario_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const values = [
-    nombre, impresora_id, filamento, gramos, horas,
+    nombre, imagen, impresora_id, filamento, gramos, horas,
     margen, iva, energia, material, desgaste,
     utilidad, impuesto, total, usuario_id
   ];
