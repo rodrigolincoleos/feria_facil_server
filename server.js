@@ -4,7 +4,14 @@ import mysql from 'mysql2';
 import dotenv from 'dotenv';
 import { checkJwt,  } from './middlewares/checkJwt.js';
 import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import https from 'https';
+import fs from 'fs';
 
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 dotenv.config();
 
 const storage = multer.diskStorage({
@@ -19,11 +26,34 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 const app = express();
+const sslOptions = {
+  key: fs.readFileSync(path.join(__dirname, 'certs/private.key')),
+  cert: fs.readFileSync(path.join(__dirname, 'certs/certificate.crt')),
+  ca: fs.readFileSync(path.join(__dirname, 'certs/ca_bundle.crt')) // si tienes este archivo
+};
+
+https.createServer(sslOptions, app).listen(443, () => {
+  console.log('🔐 Servidor HTTPS corriendo en puerto 443');
+});
+
+const redirectApp = express();
+redirectApp.use((req, res) => {
+  res.redirect(`https://${req.headers.host}${req.url}`);
+});
+redirectApp.listen(80, () => {
+  console.log('🌐 Redireccionando HTTP → HTTPS en puerto 80');
+});
+
+
+app.use('/uploads', express.static('uploads'));
 app.use(cors({
   origin: '*',
   credentials: true // solo si usas cookies o tokens en headers
 }));
 app.use(express.json());
+app.use('/uploads', express.static('uploads'));
+app.use('/.well-known/pki-validation', express.static(path.join(__dirname, 'certs/validation')));
+
 
 console.log('🛠️ Conectando a base de datos:', process.env.DB_HOST);
 
@@ -85,7 +115,6 @@ app.post('/api/post/productos/', upload.single('imagen'), (req, res) => {
   });
 });
 
-app.use('/uploads', express.static('uploads'));
 
 // Crear feria
 app.post('/api/post/feria', (req, res) => {
@@ -144,6 +173,7 @@ app.get('/api/get/productos', (_, res) => {
     SELECT 
       productos.id,
       productos.nombre,
+      productos.imagen,         -- <--- Agregado aquí
       productos.filamento,
       productos.gramos,
       productos.horas,
@@ -181,6 +211,12 @@ app.get('/api/get/producto/:id', (req, res) => {
 
 // Actualizar producto y feria
 app.put('/api/put/productos/:id', upload.single('imagen'), (req, res) => {
+<<<<<<< HEAD
+=======
+ 
+  console.log('req.body:', req.body);
+
+>>>>>>> f06341dbd01c6f277d26f0f8f60d64a24d9ace05
   const id = req.params.id;
   const {
     nombre, impresora_id, filamento, gramos, horas,
@@ -188,7 +224,11 @@ app.put('/api/put/productos/:id', upload.single('imagen'), (req, res) => {
     utilidad, impuesto, total, alto, ancho, largo, scale
   } = req.body;
 
+<<<<<<< HEAD
   // Si hay imagen nueva, guárdala en la base de datos
+=======
+  // Si hay imagen nueva, usa el nombre del archivo subido
+>>>>>>> f06341dbd01c6f277d26f0f8f60d64a24d9ace05
   let imagenSql = '';
   let imagenValue = [];
   if (req.file) {
@@ -353,6 +393,7 @@ app.get('/api/usuario/validar', (req, res) => {
     return res.status(200).json({ autorizado: true });
   });
 });
+
 
 // Eliminar feria
 app.delete('/api/del/ferias/:id', (req, res) => {
