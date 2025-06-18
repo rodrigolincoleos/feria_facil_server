@@ -180,7 +180,7 @@ app.get('/api/get/producto/:id', (req, res) => {
 });
 
 // Actualizar producto y feria
-app.put('/api/put/productos/:id', (req, res) => {
+app.put('/api/put/productos/:id', upload.single('imagen'), (req, res) => {
   const id = req.params.id;
   const {
     nombre, impresora_id, filamento, gramos, horas,
@@ -188,18 +188,29 @@ app.put('/api/put/productos/:id', (req, res) => {
     utilidad, impuesto, total, alto, ancho, largo, scale
   } = req.body;
 
+  // Si hay imagen nueva, guárdala en la base de datos
+  let imagenSql = '';
+  let imagenValue = [];
+  if (req.file) {
+    imagenSql = ', imagen = ?';
+    imagenValue = [req.file.filename];
+  }
+
   const sql = `
     UPDATE productos SET
       nombre = ?, impresora_id = ?, filamento = ?, gramos = ?, horas = ?,
       margen = ?, iva = ?, energia = ?, material = ?, desgaste = ?,
       utilidad = ?, impuesto = ?, total = ?
+      ${imagenSql}
     WHERE id = ?
   `;
 
   const values = [
     nombre, impresora_id, filamento, gramos, horas,
     margen, iva, energia, material, desgaste,
-    utilidad, impuesto, total, id
+    utilidad, impuesto, total,
+    ...imagenValue,
+    id
   ];
 
   db.query(sql, values, (err) => {
