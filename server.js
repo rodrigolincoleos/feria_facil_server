@@ -406,7 +406,6 @@ app.delete('/api/del/ferias/:id', (req, res) => {
 });
 
 
-
 app.get('/api/privado', checkJwt, (req, res) => {
   try {
     res.json({ mensaje: 'Acceso permitido a ruta protegida' });
@@ -438,9 +437,122 @@ app.post('/api/post/ventas_feria', (req, res) => {
   res.status(200).json({ mensaje: '✅ Ventas registradas' });
 });
 
+// Obtener perfil de usuario
+app.get('/api/usuario/profile', checkJwt, (req, res) => {
+  const { email } = req.query;
 
-// Iniciar servidor
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'Email es requerido' });
+  }
+
+  const sql = `
+    SELECT u.*, ua.email as auth_email 
+    FROM usuarios u 
+    LEFT JOIN usuarios_autorizados ua ON u.email = ua.email 
+    WHERE u.email = ?
+  `;
+
+  db.query(sql, [email], (err, result) => {
+    if (err) {
+      console.error('❌ Error al obtener perfil:', err);
+      return res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+
+    if (result.length === 0) {
+      // Usuario no existe, crear con rol por defecto
+      const insertSql = `
+        INSERT INTO usuarios (email, name, role, created_at) 
+        VALUES (?, ?, 'user', NOW())
+      `;
+      
+      db.query(insertSql, [email, email.split('@')[0]], (insertErr, insertResult) => {
+        if (insertErr) {
+          console.error('❌ Error al crear usuario:', insertErr);
+          return res.status(500).json({ success: false, message: 'Error al crear usuario' });
+        }
+
+        return res.json({
+          success: true,
+          user: {
+            id: insertResult.insertId,
+            email: email,
+            name: email.split('@')[0],
+            role: 'user',
+            created_at: new Date()
+          }
+        });
+      });
+    } else {
+      return res.json({ success: true, user: result[0] });
+    }
+  });
 });
+
+// Listar todos los usuarios (solo webmaster)
+app.get('/api/usuario/list', checkJwt, (req, res) => {
+  const sql = `
+    SELECT id, email, name, role, picture, created_at, last_login
+    FROM usuarios 
+    ORDER BY created_at DESC
+  `;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error('❌ Error al listar usuarios:', err);
+      return res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+
+    return res.json({ success: true, users: result });
+  });
+});
+
+// Actualizar rol de usuario (solo webmaster)
+app.put('/api/usuario/update-role', checkJwt, (req, res) => {
+  const { userId, email, role } = req.body;
+
+  if (!userId && !email) {
+    return res.status(400).json({ success: false, message: 'ID o email de usuario es requerido' });
+  }
+
+  if (!role) {
+    return res.status(400).json({ success: false, message: 'Rol es requerido' });
+  }
+
+  // Validar que el rol sea válido
+  const validRoles = ['user', 'admin', 'webmaster'];
+  if (!validRoles.includes(role)) {
+    return res.status(400).json({ success: false, message: 'Rol inválido' });
+  }
+
+  const sql = userId 
+    ? 'UPDATE usuarios SET role = ?, updated_at = NOW() WHERE id = ?'
+    : 'UPDATE usuarios SET role = ?, updated_at = NOW() WHERE email = ?';
+  
+  const param = userId || email;
+
+  db.query(sql, [role, param], (err, result) => {
+    if (err) {
+      console.error('❌ Error al actualizar rol:', err);
+      return res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+    }
+
+    console.log(`✅ Rol actualizado: ${email || userId} → ${role}`);
+    return res.json({ success: true, message: 'Rol actualizado correctamente' });
+  });
+});
+
+// Actualizar último login
+app.post('/api/usuario/last-login', checkJwt, (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'Email es requerido' });
+  }
+
+  const sql = 'UPDATE usuarios SET last_login = NOW() WHERE email = ?';
+
+  db.query(sql, [email],
