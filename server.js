@@ -211,12 +211,9 @@ app.get('/api/get/producto/:id', (req, res) => {
 
 // Actualizar producto y feria
 app.put('/api/put/productos/:id', upload.single('imagen'), (req, res) => {
-<<<<<<< HEAD
-=======
  
   console.log('req.body:', req.body);
 
->>>>>>> f06341dbd01c6f277d26f0f8f60d64a24d9ace05
   const id = req.params.id;
   const {
     nombre, impresora_id, filamento, gramos, horas,
@@ -224,11 +221,7 @@ app.put('/api/put/productos/:id', upload.single('imagen'), (req, res) => {
     utilidad, impuesto, total, alto, ancho, largo, scale
   } = req.body;
 
-<<<<<<< HEAD
-  // Si hay imagen nueva, guárdala en la base de datos
-=======
   // Si hay imagen nueva, usa el nombre del archivo subido
->>>>>>> f06341dbd01c6f277d26f0f8f60d64a24d9ace05
   let imagenSql = '';
   let imagenValue = [];
   if (req.file) {
