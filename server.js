@@ -8,6 +8,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import https from 'https';
 import fs from 'fs';
+import ProductosController from './controllers/productosController.js';
+
+// Importar nuevos controllers
+import * as productosV2 from './controllers/productosControllerV2.js';
+import * as categoriasController from './controllers/categoriasController.js';
+import { validarUsuario } from './controllers/usuarioController.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -57,7 +63,6 @@ app.use('/.well-known/pki-validation', express.static(path.join(__dirname, 'cert
 
 console.log('🛠️ Conectando a base de datos:', process.env.DB_HOST);
 
-
 export const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -70,8 +75,15 @@ export const db = mysql.createPool({
   keepAliveInitialDelay: 10000
 });
 
+// Inicializar controlador de productos
+const productosController = new ProductosController(db);
+productosController.configurarRutas(app);
 
-// Crear Producto
+// =============================================================================
+// RUTAS HEREDADAS (MANTENER COMPATIBILIDAD)
+// =============================================================================
+
+// Crear Producto (Ruta heredada - mantenida para compatibilidad)
 app.post('/api/post/productos/', upload.single('imagen'), (req, res) => {
   const {
     nombre, impresora_id, filamento, gramos, horas,
@@ -554,5 +566,51 @@ app.post('/api/usuario/last-login', checkJwt, (req, res) => {
   }
 
   const sql = 'UPDATE usuarios SET last_login = NOW() WHERE email = ?';
+  db.query(sql, [email], (err, result) => {
+    if (err) {
+      console.error('❌ Error al actualizar último login:', err);
+      return res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
 
-  db.query(sql, [email],
+    return res.json({ success: true });
+  });
+});
+
+// =============================================================================
+// NUEVAS RUTAS V2 - SISTEMA ACTUALIZADO
+// =============================================================================
+
+// RUTAS DE PRODUCTOS V2
+app.get('/api/v2/productos', productosV2.obtenerProductos);
+app.get('/api/v2/productos/:id', productosV2.obtenerProductoPorId);
+app.post('/api/v2/productos', upload.single('imagen'), productosV2.crearProducto);
+app.put('/api/v2/productos/:id', productosV2.actualizarProducto);
+app.delete('/api/v2/productos/:id', productosV2.eliminarProducto);
+
+// RUTAS DE PRODUCTOS ESPECIALES
+app.get('/api/v2/productos/destacados', productosV2.obtenerProductosDestacados);
+app.get('/api/v2/productos/stock-bajo', productosV2.obtenerProductosStockBajo);
+
+// RUTAS DE CATEGORÍAS
+app.get('/api/v2/categorias', categoriasController.obtenerCategorias);
+app.post('/api/v2/categorias', categoriasController.crearCategoria);
+app.put('/api/v2/categorias/:id', categoriasController.actualizarCategoria);
+app.delete('/api/v2/categorias/:id', categoriasController.eliminarCategoria);
+
+// RUTAS DE MARCAS
+app.get('/api/v2/marcas', categoriasController.obtenerMarcas);
+app.post('/api/v2/marcas', categoriasController.crearMarca);
+app.put('/api/v2/marcas/:id', categoriasController.actualizarMarca);
+app.delete('/api/v2/marcas/:id', categoriasController.eliminarMarca);
+
+// RUTAS DE APOYO
+app.get('/api/v2/atributos', productosV2.obtenerAtributos);
+
+// RUTA DE VALIDACIÓN DE USUARIO (actualizada)
+app.get('/api/v2/usuario/validar', validarUsuario);
+
+console.log('🚀 Rutas V2 configuradas:');
+console.log('📦 /api/v2/productos - CRUD completo');
+console.log('🏷️  /api/v2/categorias - Gestión de categorías');
+console.log('🏭 /api/v2/marcas - Gestión de marcas');
+console.log('⚡ /api/v2/atributos - Atributos flexibles');
